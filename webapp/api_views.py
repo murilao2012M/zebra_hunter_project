@@ -14,21 +14,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 from pydantic import ValidationError
 
-from zebra_hunter.api.schemas import AnalyzeAlertsRequest, BackupRequest, PerformanceRequest, ScanRequest, UpdateResultsRequest
-from zebra_hunter.api.service import EngineService
 from .dashboard_data import build_dashboard_payload
 from .ops_monitor import collect_ops_snapshot
-from zhcore.ingest import ingest_scan_rows
 from zhcore.license_service import check_license_status, create_checkout_session, process_mercado_pago_webhook
 from zhcore.models import AsyncTaskRun, Opportunity, PublishedPick, UserProfile
-from zhcore.tasks import (
-    analyze_alerts_task,
-    backup_task,
-    mongo_sync_task,
-    performance_task,
-    scan_task,
-    update_results_task,
-)
 
 
 def _api_auth_required(view_func: Callable[..., JsonResponse]) -> Callable[..., JsonResponse]:
@@ -48,6 +37,42 @@ def _parse_json_body(request: HttpRequest) -> dict[str, Any]:
         return json.loads(request.body.decode("utf-8"))
     except json.JSONDecodeError as exc:
         raise ValueError(f"JSON invalido: {exc}") from exc
+
+
+def _engine_unavailable_response(exc: Exception | None = None) -> JsonResponse:
+    message = "Engine Zebra Hunter nao esta disponivel neste deploy de backend."
+    if exc:
+        message = f"{message} Detalhe: {exc}"
+    return JsonResponse({"ok": False, "message": message}, status=503)
+
+
+def _import_engine_components() -> tuple[Any, Any, Any, Any, Any, Any, Any]:
+    from zebra_hunter.api.schemas import AnalyzeAlertsRequest, BackupRequest, PerformanceRequest, ScanRequest, UpdateResultsRequest
+    from zebra_hunter.api.service import EngineService
+    from zhcore.ingest import ingest_scan_rows
+
+    return (
+        AnalyzeAlertsRequest,
+        BackupRequest,
+        PerformanceRequest,
+        ScanRequest,
+        UpdateResultsRequest,
+        EngineService,
+        ingest_scan_rows,
+    )
+
+
+def _import_async_tasks() -> tuple[Any, Any, Any, Any, Any, Any]:
+    from zhcore.tasks import (
+        analyze_alerts_task,
+        backup_task,
+        mongo_sync_task,
+        performance_task,
+        scan_task,
+        update_results_task,
+    )
+
+    return analyze_alerts_task, backup_task, mongo_sync_task, performance_task, scan_task, update_results_task
 
 
 def _api_backoffice_allowed(request: HttpRequest) -> bool:
@@ -112,6 +137,10 @@ def api_public_mercadopago_webhook(request: HttpRequest) -> JsonResponse:
 @require_GET
 @_api_auth_required
 def api_health(request: HttpRequest) -> JsonResponse:
+    try:
+        _, _, _, _, _, EngineService, _ = _import_engine_components()
+    except Exception as exc:
+        return _engine_unavailable_response(exc)
     service = EngineService()
     payload = service.health(scheduler={"enabled": False, "jobs": [], "source": "django"})
     payload["message"] = "django engine online"
@@ -217,6 +246,10 @@ def api_ops_metrics(request: HttpRequest) -> JsonResponse:
 @_api_auth_required
 def api_scan_run(request: HttpRequest) -> JsonResponse:
     try:
+        _, _, _, ScanRequest, _, EngineService, ingest_scan_rows = _import_engine_components()
+    except Exception as exc:
+        return _engine_unavailable_response(exc)
+    try:
         req = ScanRequest(**_parse_json_body(request))
     except (ValueError, ValidationError) as exc:
         return JsonResponse({"ok": False, "message": str(exc)}, status=400)
@@ -236,6 +269,10 @@ def api_scan_run(request: HttpRequest) -> JsonResponse:
 @_api_auth_required
 def api_performance_run(request: HttpRequest) -> JsonResponse:
     try:
+        _, _, PerformanceRequest, _, _, EngineService, _ = _import_engine_components()
+    except Exception as exc:
+        return _engine_unavailable_response(exc)
+    try:
         req = PerformanceRequest(**_parse_json_body(request))
     except (ValueError, ValidationError) as exc:
         return JsonResponse({"ok": False, "message": str(exc)}, status=400)
@@ -250,6 +287,10 @@ def api_performance_run(request: HttpRequest) -> JsonResponse:
 @_api_auth_required
 def api_update_results_run(request: HttpRequest) -> JsonResponse:
     try:
+        _, _, _, _, UpdateResultsRequest, EngineService, _ = _import_engine_components()
+    except Exception as exc:
+        return _engine_unavailable_response(exc)
+    try:
         req = UpdateResultsRequest(**_parse_json_body(request))
     except (ValueError, ValidationError) as exc:
         return JsonResponse({"ok": False, "message": str(exc)}, status=400)
@@ -263,6 +304,10 @@ def api_update_results_run(request: HttpRequest) -> JsonResponse:
 @require_POST
 @_api_auth_required
 def api_analyze_alerts_run(request: HttpRequest) -> JsonResponse:
+    try:
+        AnalyzeAlertsRequest, _, _, _, _, EngineService, _ = _import_engine_components()
+    except Exception as exc:
+        return _engine_unavailable_response(exc)
     try:
         req = AnalyzeAlertsRequest(**_parse_json_body(request))
     except (ValueError, ValidationError) as exc:
@@ -282,6 +327,11 @@ def _enqueue_response(task_id: str, kind: str) -> JsonResponse:
 @_api_auth_required
 def api_scan_enqueue(request: HttpRequest) -> JsonResponse:
     try:
+        _, _, _, ScanRequest, _, _, _ = _import_engine_components()
+        _, _, _, _, scan_task, _ = _import_async_tasks()
+    except Exception as exc:
+        return _engine_unavailable_response(exc)
+    try:
         req = ScanRequest(**_parse_json_body(request))
     except (ValueError, ValidationError) as exc:
         return JsonResponse({"ok": False, "message": str(exc)}, status=400)
@@ -297,6 +347,11 @@ def api_scan_enqueue(request: HttpRequest) -> JsonResponse:
 @require_POST
 @_api_auth_required
 def api_performance_enqueue(request: HttpRequest) -> JsonResponse:
+    try:
+        _, _, PerformanceRequest, _, _, _, _ = _import_engine_components()
+        _, _, _, performance_task, _, _ = _import_async_tasks()
+    except Exception as exc:
+        return _engine_unavailable_response(exc)
     try:
         req = PerformanceRequest(**_parse_json_body(request))
     except (ValueError, ValidationError) as exc:
@@ -314,6 +369,11 @@ def api_performance_enqueue(request: HttpRequest) -> JsonResponse:
 @_api_auth_required
 def api_update_results_enqueue(request: HttpRequest) -> JsonResponse:
     try:
+        _, _, _, _, UpdateResultsRequest, _, _ = _import_engine_components()
+        _, _, _, _, _, update_results_task = _import_async_tasks()
+    except Exception as exc:
+        return _engine_unavailable_response(exc)
+    try:
         req = UpdateResultsRequest(**_parse_json_body(request))
     except (ValueError, ValidationError) as exc:
         return JsonResponse({"ok": False, "message": str(exc)}, status=400)
@@ -330,6 +390,11 @@ def api_update_results_enqueue(request: HttpRequest) -> JsonResponse:
 @_api_auth_required
 def api_analyze_alerts_enqueue(request: HttpRequest) -> JsonResponse:
     try:
+        AnalyzeAlertsRequest, _, _, _, _, _, _ = _import_engine_components()
+        analyze_alerts_task, _, _, _, _, _ = _import_async_tasks()
+    except Exception as exc:
+        return _engine_unavailable_response(exc)
+    try:
         req = AnalyzeAlertsRequest(**_parse_json_body(request))
     except (ValueError, ValidationError) as exc:
         return JsonResponse({"ok": False, "message": str(exc)}, status=400)
@@ -345,6 +410,11 @@ def api_analyze_alerts_enqueue(request: HttpRequest) -> JsonResponse:
 @require_POST
 @_api_auth_required
 def api_mongo_sync_enqueue(request: HttpRequest) -> JsonResponse:
+    try:
+        _, _, _, _, _, _, _ = _import_engine_components()
+        _, _, mongo_sync_task, _, _, _ = _import_async_tasks()
+    except Exception as exc:
+        return _engine_unavailable_response(exc)
     body = _parse_json_body(request)
     task = mongo_sync_task.delay(body or {})
     AsyncTaskRun.objects.update_or_create(
@@ -358,6 +428,11 @@ def api_mongo_sync_enqueue(request: HttpRequest) -> JsonResponse:
 @require_POST
 @_api_auth_required
 def api_backup_enqueue(request: HttpRequest) -> JsonResponse:
+    try:
+        _, BackupRequest, _, _, _, _, _ = _import_engine_components()
+        _, backup_task, _, _, _, _ = _import_async_tasks()
+    except Exception as exc:
+        return _engine_unavailable_response(exc)
     try:
         req = BackupRequest(**_parse_json_body(request))
     except (ValueError, ValidationError) as exc:
