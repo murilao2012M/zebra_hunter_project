@@ -1,0 +1,229 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zebra Hunter | Backoffice</title>
+  <link rel="stylesheet" href="{% static 'webapp/dashboard.css' %}" />
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.5/dist/chart.umd.min.js"></script>
+  <script defer src="{% static 'webapp/dashboard.js' %}"></script>
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <main class="page">
+    <header class="topbar panel">
+      <div>
+        <p class="eyebrow">Quant Edge Platform</p>
+        <h1>Zebra Hunter Quantum Pro</h1>
+        <p class="subtitle">Backoffice interno para operar o motor, revisar candidatos e abastecer o portal do cliente.</p>
+      </div>
+      <nav class="actions">
+        <a class="btn ghost" href="/">Site</a>
+        <a class="btn ghost" href="/app/">Portal</a>
+        <a class="btn ghost" href="/backoffice/review/">Revisao</a>
+        <a class="btn ghost" href="/admin/">Admin</a>
+        <button id="refreshDashboardBtn" class="btn primary" type="button">Atualizar dados</button>
+        <a class="btn ghost" href="/accounts/logout/">Sair</a>
+      </nav>
+    </header>
+
+    {% if not db_ready %}
+      <section class="status status-warn panel">
+        Banco web ainda nao esta pronto. Execute <code>python manage.py migrate</code>.
+      </section>
+    {% else %}
+      <section class="status status-ok panel">
+        Dashboard conectado e pronto para operacao.
+      </section>
+    {% endif %}
+
+    <section class="kpis">
+      <article class="kpi-card panel">
+        <p>Scans</p>
+        <h3 data-kpi="scans">{{ kpis.scans }}</h3>
+      </article>
+      <article class="kpi-card panel">
+        <p>Partidas</p>
+        <h3 data-kpi="matches">{{ kpis.matches }}</h3>
+      </article>
+      <article class="kpi-card panel">
+        <p>Oportunidades</p>
+        <h3 data-kpi="opportunities">{{ kpis.opportunities }}</h3>
+      </article>
+      <article class="kpi-card panel">
+        <p>Picks resolvidas</p>
+        <h3 data-kpi="picks_settled">{{ kpis.picks_settled }}</h3>
+      </article>
+      <article class="kpi-card panel">
+        <p>Hit rate</p>
+        <h3 data-kpi="hit_rate">{{ kpis.hit_rate }}%</h3>
+      </article>
+      <article class="kpi-card panel">
+        <p>ROI</p>
+        <h3 data-kpi="roi">{{ kpis.roi }}%</h3>
+      </article>
+      <article class="kpi-card panel">
+        <p>Banca simulada</p>
+        <h3 data-kpi="bankroll">${{ kpis.bankroll }}</h3>
+      </article>
+      <article class="kpi-card panel">
+        <p>Drawdown max</p>
+        <h3 data-kpi="max_drawdown">{{ kpis.max_drawdown }}</h3>
+      </article>
+    </section>
+
+    <section class="status panel">
+      Candidatos pendentes: <strong>{{ pending_candidates|length }}</strong> |
+      Picks publicadas: <strong>{{ published_count }}</strong>
+    </section>
+
+    <section class="chart-grid">
+      <article class="panel chart-card">
+        <div class="chart-head">
+          <h2>Curva de banca</h2>
+          <span>Acumulado de lucro/prejuizo por pick</span>
+        </div>
+        <canvas id="bankrollChart"></canvas>
+      </article>
+      <article class="panel chart-card">
+        <div class="chart-head">
+          <h2>Lucro diario</h2>
+          <span>Resultado consolidado por dia</span>
+        </div>
+        <canvas id="dailyPnlChart"></canvas>
+      </article>
+      <article class="panel chart-card">
+        <div class="chart-head">
+          <h2>ROI por liga</h2>
+          <span>Top ligas por resultado</span>
+        </div>
+        <canvas id="leagueRoiChart"></canvas>
+      </article>
+      <article class="panel chart-card">
+        <div class="chart-head">
+          <h2>Status de picks</h2>
+          <span>Distribuicao G / P / E / V</span>
+        </div>
+        <canvas id="statusChart"></canvas>
+      </article>
+    </section>
+
+    <section class="data-grid">
+      <article class="panel">
+        <h2>Top ligas</h2>
+        <table class="table" id="topLeaguesTable">
+          <thead>
+            <tr>
+              <th>Liga</th>
+              <th>Picks</th>
+              <th>Lucro</th>
+              <th>ROI</th>
+              <th>Taxa de acerto</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in top_leagues %}
+              <tr>
+                <td>{{ row.league }}</td>
+                <td>{{ row.picks }}</td>
+                <td>{{ row.profit }}</td>
+                <td>{{ row.roi }}%</td>
+                <td>{{ row.hit_rate }}%</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5">Sem dados de ligas ainda.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </article>
+
+      <article class="panel">
+        <h2>Oportunidades recentes</h2>
+        <table class="table" id="latestOppsTable">
+          <thead>
+            <tr>
+              <th>Partida</th>
+              <th>Underdog</th>
+              <th>EV</th>
+              <th>Edge</th>
+              <th>Conf</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in latest_opportunities %}
+              <tr>
+                <td>{{ o.match }}</td>
+                <td>{{ o.underdog }}</td>
+                <td>{{ o.ev }}%</td>
+                <td>{{ o.edge }}%</td>
+                <td>{{ o.conf }}%</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5">Sem oportunidades registradas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <section class="side-grid">
+      <article class="panel">
+        <h2>Filas assincronas (jobs)</h2>
+        <table class="table" id="jobsTable">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Status</th>
+              <th>Criado em</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for j in latest_jobs %}
+              <tr>
+                <td>{{ j.kind }}</td>
+                <td>{{ j.status }}</td>
+                <td>{{ j.created_at }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3">Sem jobs ainda.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </article>
+      <article class="panel">
+        <h2>Scans recentes</h2>
+        <table class="table" id="scansTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Status</th>
+              <th>Inicio</th>
+              <th>Top</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in latest_scans %}
+              <tr>
+                <td>{{ s.id }}</td>
+                <td>{{ s.status }}</td>
+                <td>{{ s.started_at }}</td>
+                <td>{{ s.top }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4">Sem scans ainda.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <footer class="footer">
+      <p>© 2026 Zebra Hunter by Murilo da Silva Machado | Software proprietario.</p>
+      <p>Ultima atualizacao: <span id="lastUpdateAt">carregando...</span></p>
+    </footer>
+  </main>
+
+  <script id="dashboard-chart-data" type="application/json">{{ charts_json|safe }}</script>
+</body>
+</html>

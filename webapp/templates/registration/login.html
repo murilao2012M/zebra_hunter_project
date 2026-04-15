@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zebra Hunter | Login</title>
+  <style>
+    :root {
+      --bg: #070f1f;
+      --panel: #12233f;
+      --text: #eaf3ff;
+      --muted: #9ab0d1;
+      --line: #29456f;
+      --primary: #2e7bff;
+      --primary-2: #1f65d8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 20% 10%, #173058 0%, var(--bg) 45%);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .card {
+      width: min(460px, 100%);
+      background: linear-gradient(135deg, #10203a 0%, var(--panel) 100%);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 28px;
+    }
+    h1 { margin: 0 0 8px; font-size: 32px; }
+    p { margin: 0 0 22px; color: var(--muted); }
+    label { display: block; margin-bottom: 8px; font-weight: 600; }
+    input {
+      width: 100%;
+      border: 1px solid #355b90;
+      border-radius: 10px;
+      background: #08152c;
+      color: var(--text);
+      padding: 12px;
+      margin-bottom: 16px;
+      outline: none;
+    }
+    input:focus { border-color: #60a8ff; }
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      color: #f7fbff;
+      font-weight: 700;
+      background: var(--primary);
+      cursor: pointer;
+    }
+    button:hover { background: var(--primary-2); }
+    .err {
+      border: 1px solid #7d2f46;
+      background: #2a1420;
+      color: #ff9ab1;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Zebra Hunter</h1>
+    <p>Acesse o painel web profissional.</p>
+    {% if form.errors %}
+      <div class="err">Usuario ou senha invalidos.</div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="id_username">Usuario</label>
+      {{ form.username }}
+      <label for="id_password">Senha</label>
+      {{ form.password }}
+      <button type="submit">Entrar</button>
+    </form>
+  </main>
+</body>
+</html>
+

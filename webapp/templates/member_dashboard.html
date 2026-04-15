@@ -1,0 +1,132 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zebra Hunter | Portal do Cliente</title>
+  <link rel="stylesheet" href="{% static 'webapp/portal.css' %}" />
+</head>
+<body>
+  <main class="page">
+    <header class="topbar panel">
+      <div class="brand">
+        <p class="eyebrow">Portal do cliente</p>
+        <h2>Leitura das picks publicadas</h2>
+        <p class="subtitle">Bem-vindo, {{ profile.display_name|default:request.user.username }}. Aqui voce acompanha apenas as oportunidades liberadas.</p>
+      </div>
+      <nav class="actions">
+        <a class="btn ghost" href="/">Site</a>
+        {% if request.user.portal_profile.can_access_backoffice or request.user.is_staff or request.user.is_superuser %}
+          <a class="btn ghost" href="/backoffice/">Backoffice</a>
+        {% endif %}
+        <a class="btn ghost" href="/accounts/logout/">Sair</a>
+      </nav>
+    </header>
+
+    {% if messages %}
+      <section class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+      </section>
+    {% endif %}
+
+    <section class="metrics">
+      <article class="metric-card panel">
+        <p class="muted">Publicadas</p>
+        <h3>{{ kpis.published }}</h3>
+      </article>
+      <article class="metric-card panel">
+        <p class="muted">Resolvidas</p>
+        <h3>{{ kpis.resolved }}</h3>
+      </article>
+      <article class="metric-card panel">
+        <p class="muted">Taxa de acerto</p>
+        <h3>{{ kpis.hit_rate }}%</h3>
+      </article>
+      <article class="metric-card panel">
+        <p class="muted">ROI medio</p>
+        <h3>{{ kpis.roi }}%</h3>
+      </article>
+    </section>
+
+    <section class="section panel">
+      <div class="split">
+        <div>
+          <p class="eyebrow">Jogos do dia</p>
+          <h2>O que foi liberado para hoje</h2>
+          <p class="subtitle">Cada pick exibe odd, EV, edge, confianca e o racional curto de selecao.</p>
+        </div>
+      </div>
+      <div class="pick-grid">
+        {% for pick in upcoming_picks %}
+          <article class="pick-card">
+            <header>
+              <div>
+                <h3>{{ pick.title }}</h3>
+                <p class="meta-line">{{ pick.league_name_snapshot }}{% if pick.country_snapshot %} | {{ pick.country_snapshot }}{% endif %}</p>
+              </div>
+              <span class="badge warn">{{ pick.get_status_display }}</span>
+            </header>
+            <div class="data-line">
+              <span><strong>Odd:</strong> {{ pick.odd_snapshot|floatformat:2 }}</span>
+              <span><strong>EV:</strong> {{ pick.ev_snapshot|floatformat:2 }}%</span>
+              <span><strong>Edge:</strong> {{ pick.edge_snapshot|floatformat:2 }}%</span>
+              <span><strong>Conf:</strong> {{ pick.conf_snapshot|floatformat:2 }}%</span>
+            </div>
+            <p class="reason">{{ pick.short_reason|default:pick.public_note|truncatechars:160 }}</p>
+            <div class="actions">
+              <a class="btn primary" href="/app/picks/{{ pick.slug }}/">Abrir leitura</a>
+            </div>
+          </article>
+        {% empty %}
+          <article class="empty-card">
+            <h3>Sem picks abertas no momento</h3>
+            <p class="reason">Quando o backoffice publicar novas oportunidades, elas aparecerao aqui.</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="split">
+        <div>
+          <p class="eyebrow">Ultimos resultados</p>
+          <h2>Historico recente</h2>
+        </div>
+      </div>
+      <div class="pick-grid">
+        {% for pick in recent_results %}
+          <article class="pick-card panel">
+            <header>
+              <div>
+                <h3>{{ pick.title }}</h3>
+                <p class="meta-line">{{ pick.league_name_snapshot }}</p>
+              </div>
+              <span class="badge {% if pick.status == 'won' %}ok{% elif pick.status == 'lost' %}danger{% else %}warn{% endif %}">
+                {{ pick.get_status_display }}
+              </span>
+            </header>
+            <div class="data-line">
+              <span><strong>Odd:</strong> {{ pick.odd_snapshot|floatformat:2 }}</span>
+              <span><strong>Lucro:</strong> {{ pick.result_profit|floatformat:2 }}</span>
+              <span><strong>Publicada:</strong> {{ pick.published_at|date:"d/m H:i" }}</span>
+            </div>
+            <p class="reason">{{ pick.short_reason|default:pick.public_note|truncatechars:140 }}</p>
+          </article>
+        {% empty %}
+          <article class="empty-card panel">
+            <h3>Nenhum resultado fechado ainda</h3>
+            <p class="reason">O historico recente aparecera assim que as picks forem resolvidas.</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>Portal somente leitura. Use com criterio e gestao de banca.</p>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,124 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zebra Hunter | Portal de Picks</title>
+  <link rel="stylesheet" href="{% static 'webapp/portal.css' %}" />
+</head>
+<body>
+  <main class="page">
+    <header class="topbar panel">
+      <div class="brand">
+        <p class="eyebrow">Portal oficial</p>
+        <h2>Zebra Hunter Quantum Pro</h2>
+        <p class="subtitle">Leitura qualificada de zebras aprovadas, com contexto, historico e operacao responsavel.</p>
+      </div>
+      <nav class="actions">
+        <a class="btn ghost" href="/accounts/login/">Entrar</a>
+        <a class="btn primary" href="/app/">Abrir portal</a>
+      </nav>
+    </header>
+
+    <section class="hero panel">
+      <div class="hero-head">
+        <div>
+          <p class="eyebrow">Inteligencia publicada</p>
+          <h1>Picks curadas para leitura, nao um painel tecnico exposto.</h1>
+          <p class="subtitle">
+            O cliente ve apenas as oportunidades aprovadas, com odd, EV, edge, confianca e o racional resumido
+            retirado da leitura do motor e dos dados da API. O fluxo operacional continua no backoffice.
+          </p>
+        </div>
+        <div class="actions">
+          <a class="btn primary" href="/accounts/login/">Login do portal</a>
+          <a class="btn ghost" href="/backoffice/">Backoffice</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <article class="metric-card panel">
+        <p class="muted">Picks publicadas</p>
+        <h3>{{ kpis.published }}</h3>
+      </article>
+      <article class="metric-card panel">
+        <p class="muted">Picks resolvidas</p>
+        <h3>{{ kpis.resolved }}</h3>
+      </article>
+      <article class="metric-card panel">
+        <p class="muted">Taxa de acerto</p>
+        <h3>{{ kpis.hit_rate }}%</h3>
+      </article>
+      <article class="metric-card panel">
+        <p class="muted">ROI medio</p>
+        <h3>{{ kpis.roi }}%</h3>
+      </article>
+    </section>
+
+    <section class="section panel">
+      <div class="split">
+        <div>
+          <p class="eyebrow">Como o produto opera</p>
+          <h2>Backoffice aprova. Cliente apenas consome.</h2>
+        </div>
+      </div>
+      <div class="cards-grid">
+        <article class="pick-card">
+          <h3>1. Scanner interno</h3>
+          <p class="reason">O motor varre jogos, calcula EV, edge, confianca e score sem expor infraestrutura ao cliente.</p>
+        </article>
+        <article class="pick-card">
+          <h3>2. Revisao editorial</h3>
+          <p class="reason">Voce aprova, rejeita ou publica cada candidato no backoffice antes de liberar para leitura.</p>
+        </article>
+        <article class="pick-card">
+          <h3>3. Portal de membros</h3>
+          <p class="reason">O cliente enxerga apenas picks publicadas com explicacao curta, odds, historico e status final.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="split">
+        <div>
+          <p class="eyebrow">Ultimas publicacoes</p>
+          <h2>Picks prontas para leitura</h2>
+        </div>
+      </div>
+      <div class="pick-grid">
+        {% for pick in featured_picks %}
+          <article class="pick-card panel">
+            <header>
+              <div>
+                <h3>{{ pick.title }}</h3>
+                <p class="meta-line">{{ pick.league_name_snapshot }}{% if pick.country_snapshot %} | {{ pick.country_snapshot }}{% endif %}</p>
+              </div>
+              <span class="badge {% if pick.status == 'won' %}ok{% elif pick.status == 'lost' %}danger{% else %}warn{% endif %}">
+                {{ pick.get_status_display }}
+              </span>
+            </header>
+            <div class="data-line">
+              <span><strong>Odd:</strong> {{ pick.odd_snapshot|floatformat:2 }}</span>
+              <span><strong>EV:</strong> {{ pick.ev_snapshot|floatformat:2 }}%</span>
+              <span><strong>Edge:</strong> {{ pick.edge_snapshot|floatformat:2 }}%</span>
+              <span><strong>Conf:</strong> {{ pick.conf_snapshot|floatformat:2 }}%</span>
+            </div>
+            <p class="reason">{{ pick.short_reason|default:pick.public_note|truncatechars:160 }}</p>
+          </article>
+        {% empty %}
+          <article class="empty-card panel">
+            <h3>Nenhuma pick publicada ainda</h3>
+            <p class="reason">Assim que voce publicar no backoffice, as picks aparecerao aqui para leitura do cliente.</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>2026 Zebra Hunter by Murilo da Silva Machado | Portal de leitura com operacao editorial separada.</p>
+    </footer>
+  </main>
+</body>
+</html>

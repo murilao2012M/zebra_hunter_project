@@ -1,0 +1,257 @@
+:root {
+  --bg-1: #060f22;
+  --bg-2: #0a1a35;
+  --panel: #0f2549;
+  --panel-2: #102a52;
+  --line: #214471;
+  --line-soft: #1a365d;
+  --text: #e9f2ff;
+  --muted: #9fb6db;
+  --primary: #2e7bff;
+  --ok: #18c8a8;
+  --warn: #ffbc54;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: radial-gradient(1200px 800px at 12% -8%, #19498a22 0%, transparent 70%), linear-gradient(135deg, var(--bg-1), var(--bg-2));
+  font-family: "Segoe UI", "Inter", sans-serif;
+  min-height: 100vh;
+}
+
+.bg-glow {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(850px 550px at 90% -8%, #1ad0b220 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 22px;
+}
+
+.panel {
+  background: linear-gradient(150deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 10px 24px #00000035;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px;
+  margin-bottom: 14px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  color: #56d0ff;
+  font-weight: 700;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(30px, 3vw, 44px);
+  line-height: 1.08;
+}
+
+.subtitle {
+  margin: 9px 0 0;
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border-radius: 11px;
+  border: 1px solid #2d5488;
+  color: var(--text);
+  text-decoration: none;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.16s ease, filter 0.16s ease, background 0.16s ease;
+}
+
+.btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.btn.primary {
+  background: linear-gradient(130deg, var(--primary), #1d5ecf);
+}
+
+.btn.ghost {
+  background: #11305d;
+}
+
+.status {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  font-weight: 600;
+}
+
+.status-ok {
+  border-color: #22b89a;
+  color: #9ff0dd;
+}
+
+.status-warn {
+  border-color: #c08f3e;
+  color: #ffe1a9;
+}
+
+.status code {
+  color: #fff6dc;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.kpi-card {
+  padding: 14px;
+}
+
+.kpi-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.kpi-card h3 {
+  margin: 8px 0 0;
+  font-size: clamp(22px, 2vw, 34px);
+  line-height: 1.05;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.chart-card {
+  padding: 14px;
+  min-height: 320px;
+}
+
+.chart-head {
+  margin-bottom: 10px;
+}
+
+.chart-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.chart-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+canvas {
+  width: 100% !important;
+  height: 250px !important;
+}
+
+.data-grid,
+.side-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.data-grid .panel,
+.side-grid .panel {
+  padding: 14px;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 24px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid var(--line-soft);
+  padding: 8px 6px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.footer {
+  margin-top: 12px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1200px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+  }
+
+  .chart-grid,
+  .data-grid,
+  .side-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    flex-direction: column;
+  }
+
+  .actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: 14px;
+  }
+
+  .kpis {
+    grid-template-columns: 1fr;
+  }
+}

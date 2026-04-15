@@ -1,0 +1,77 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ pick.title }} | Zebra Hunter</title>
+  <link rel="stylesheet" href="{% static 'webapp/portal.css' %}" />
+</head>
+<body>
+  <main class="page">
+    <header class="topbar panel">
+      <div class="brand">
+        <p class="eyebrow">Leitura da pick</p>
+        <h2>{{ pick.title }}</h2>
+        <p class="subtitle">{{ pick.league_name_snapshot }}{% if pick.country_snapshot %} | {{ pick.country_snapshot }}{% endif %}</p>
+      </div>
+      <nav class="actions">
+        <a class="btn ghost" href="/app/">Voltar ao portal</a>
+        <a class="btn ghost" href="/accounts/logout/">Sair</a>
+      </nav>
+    </header>
+
+    <section class="detail-grid">
+      <article class="detail-card panel">
+        <header>
+          <div>
+            <p class="eyebrow">Leitura principal</p>
+            <h3>Por que essa zebra foi escolhida</h3>
+          </div>
+          <span class="badge {% if pick.status == 'won' %}ok{% elif pick.status == 'lost' %}danger{% else %}warn{% endif %}">
+            {{ pick.get_status_display }}
+          </span>
+        </header>
+        <p>{{ pick.short_reason|default:"Selecao liberada pelo backoffice com base nos indicadores quantitativos do motor." }}</p>
+        <p class="reason">{{ pick.public_note|default:"Sem nota adicional." }}</p>
+        {% if pick.opportunity.why_entered %}
+          <p class="reason"><strong>Leitura do motor:</strong> {{ pick.opportunity.why_entered }}</p>
+        {% endif %}
+        {% if pick.opportunity.score_breakdown %}
+          <p class="reason"><strong>Score:</strong> {{ pick.opportunity.score_breakdown }}</p>
+        {% endif %}
+      </article>
+
+      <article class="detail-card panel">
+        <header>
+          <div>
+            <p class="eyebrow">Indicadores</p>
+            <h3>Variaveis tecnicas publicadas</h3>
+          </div>
+        </header>
+        <div class="data-line">
+          <span><strong>Odd:</strong> {{ pick.odd_snapshot|floatformat:2 }}</span>
+          <span><strong>EV:</strong> {{ pick.ev_snapshot|floatformat:2 }}%</span>
+          <span><strong>Edge:</strong> {{ pick.edge_snapshot|floatformat:2 }}%</span>
+        </div>
+        <div class="data-line">
+          <span><strong>Confianca:</strong> {{ pick.conf_snapshot|floatformat:2 }}%</span>
+          <span><strong>P(final):</strong> {{ pick.p_final_snapshot|floatformat:2 }}%</span>
+          <span><strong>Underdog:</strong> {{ pick.underdog_snapshot }}</span>
+        </div>
+        <div class="data-line">
+          <span><strong>Kickoff:</strong> {{ pick.kickoff_snapshot|date:"d/m/Y H:i" }}</span>
+          <span><strong>Status:</strong> {{ pick.get_status_display }}</span>
+          {% if pick.result_label %}
+            <span><strong>Resultado:</strong> {{ pick.result_label }}</span>
+          {% endif %}
+        </div>
+      </article>
+    </section>
+
+    <footer class="footer">
+      <p>Leitura publicada para membros. Nao representa garantia de lucro.</p>
+    </footer>
+  </main>
+</body>
+</html>

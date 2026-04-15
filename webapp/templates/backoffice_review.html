@@ -1,0 +1,146 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zebra Hunter | Revisao Editorial</title>
+  <link rel="stylesheet" href="{% static 'webapp/portal.css' %}" />
+</head>
+<body>
+  <main class="page">
+    <header class="topbar panel">
+      <div class="brand">
+        <p class="eyebrow">Backoffice</p>
+        <h2>Fila editorial de oportunidades</h2>
+        <p class="subtitle">Aprovar, rejeitar e publicar sem expor o motor operacional ao cliente.</p>
+      </div>
+      <nav class="actions">
+        <a class="btn ghost" href="/backoffice/">Dashboard</a>
+        <a class="btn ghost" href="/app/">Portal cliente</a>
+        <a class="btn ghost" href="/accounts/logout/">Sair</a>
+      </nav>
+    </header>
+
+    {% if messages %}
+      <section class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+      </section>
+    {% endif %}
+
+    <section class="section">
+      <div class="split">
+        <div>
+          <p class="eyebrow">Candidatos internos</p>
+          <h2>O que pode virar pick do cliente</h2>
+        </div>
+      </div>
+      <div class="review-grid">
+        {% for opp in candidates %}
+          <article class="review-card panel">
+            <header>
+              <div>
+                <h3>{{ opp.match.home_team.name }} x {{ opp.match.away_team.name }}</h3>
+                <p class="meta-line">{{ opp.match.league.name }}{% if opp.match.league.country %} | {{ opp.match.league.country }}{% endif %}</p>
+              </div>
+              <span class="badge {% if opp.tier == 'A' %}ok{% elif opp.tier == 'B' %}warn{% else %}danger{% endif %}">
+                Tier {{ opp.tier }}
+              </span>
+            </header>
+            <div class="data-line">
+              <span><strong>Underdog:</strong> {{ opp.underdog_team.name }}</span>
+              <span><strong>Odd:</strong> {{ opp.odd_best|floatformat:2 }}</span>
+              <span><strong>EV:</strong> {{ opp.ev|floatformat:2 }}%</span>
+              <span><strong>Edge:</strong> {{ opp.edge|floatformat:2 }}%</span>
+            </div>
+            <div class="data-line">
+              <span><strong>Conf:</strong> {{ opp.conf|floatformat:2 }}%</span>
+              <span><strong>P(final):</strong> {{ opp.p_final|floatformat:2 }}%</span>
+              <span><strong>Score:</strong> {{ opp.score|floatformat:2 }}</span>
+            </div>
+            <p class="reason">{{ opp.why_entered|default:"Sem racional detalhado salvo no candidato." }}</p>
+            {% if opp.score_breakdown %}
+              <p class="reason"><strong>Score:</strong> {{ opp.score_breakdown }}</p>
+            {% endif %}
+            <form class="form-stack" method="post" action="/backoffice/review/{{ opp.id }}/action/">
+              {% csrf_token %}
+              <div class="form-grid">
+                <label>
+                  Motivo publico
+                  <input type="text" name="public_reason" value="{% if opp.review.public_reason %}{{ opp.review.public_reason }}{% endif %}" placeholder="Ex.: EV acima do perfil e mercado mal precificado" />
+                </label>
+                <label>
+                  Prioridade
+                  <input type="number" name="priority" min="0" max="100" value="0" />
+                </label>
+              </div>
+              <label>
+                Nota privada
+                <textarea name="private_note" placeholder="Observacoes internas do backoffice"></textarea>
+              </label>
+              <label>
+                Nota do cliente
+                <textarea name="public_note" placeholder="Resumo curto que aparecera no portal do cliente"></textarea>
+              </label>
+              <div class="actions">
+                <button class="btn warn" type="submit" name="action" value="approve">Aprovar</button>
+                <button class="btn danger" type="submit" name="action" value="reject">Rejeitar</button>
+                <button class="btn success" type="submit" name="action" value="publish">Publicar no portal</button>
+                <button class="btn ghost" type="submit" name="action" value="archive">Arquivar</button>
+              </div>
+            </form>
+          </article>
+        {% empty %}
+          <article class="empty-card panel">
+            <h3>Nenhum candidato pendente</h3>
+            <p class="reason">Rode o scanner ou aguarde novas oportunidades do motor.</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="section panel">
+      <div class="split">
+        <div>
+          <p class="eyebrow">Ja publicado</p>
+          <h2>Feed atual do cliente</h2>
+        </div>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Pick</th>
+            <th>Odd</th>
+            <th>EV</th>
+            <th>Edge</th>
+            <th>Status</th>
+            <th>Publicado em</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pick in published_picks %}
+            <tr>
+              <td>{{ pick.title }}</td>
+              <td>{{ pick.odd_snapshot|floatformat:2 }}</td>
+              <td>{{ pick.ev_snapshot|floatformat:2 }}%</td>
+              <td>{{ pick.edge_snapshot|floatformat:2 }}%</td>
+              <td>{{ pick.get_status_display }}</td>
+              <td>{{ pick.published_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6">Nenhuma pick publicada ainda.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="footer">
+      <p>Backoffice editorial. Cliente recebe apenas leitura aprovada.</p>
+    </footer>
+  </main>
+</body>
+</html>
