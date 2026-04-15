@@ -4,6 +4,7 @@ import os
 import sys
 from pathlib import Path
 
+import dj_database_url
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -89,12 +90,22 @@ ASGI_APPLICATION = "webapp.asgi.application"
 
 data_dir = BASE_DIR / "data"
 data_dir.mkdir(parents=True, exist_ok=True)
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": str(data_dir / "web.sqlite3"),
+database_url = (os.getenv("DATABASE_URL") or "").strip()
+if database_url:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            database_url,
+            conn_max_age=600,
+            ssl_require=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": str(data_dir / "web.sqlite3"),
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
