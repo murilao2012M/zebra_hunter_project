@@ -5,7 +5,7 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Sum
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -86,19 +86,19 @@ def _publication_kpis(queryset) -> dict[str, float]:
 
 
 def public_home_view(request: HttpRequest) -> HttpResponse:
-    published = list(
-        PublishedPick.objects.filter(is_active=True, visibility="members")
-        .select_related("opportunity__match__league")
-        .order_by("-published_at")[:6]
+    return JsonResponse(
+        {
+            "ok": True,
+            "service": "zebra-license-backend",
+            "message": "License backend online.",
+            "endpoints": {
+                "license_status": "/api/public/license/status/",
+                "license_checkout": "/api/public/license/checkout/",
+                "mercado_pago_webhook": "/api/public/payments/mercadopago/webhook/",
+            },
+        },
+        status=200,
     )
-    for item in published:
-        _sync_publication_from_pick(item)
-    kpis = _publication_kpis(PublishedPick.objects.filter(is_active=True, visibility="members"))
-    context = {
-        "featured_picks": published,
-        "kpis": kpis,
-    }
-    return render(request, "public_home.html", context)
 
 
 @login_required
