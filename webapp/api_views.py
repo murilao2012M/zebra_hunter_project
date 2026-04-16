@@ -105,7 +105,10 @@ def api_public_license_status(request: HttpRequest) -> JsonResponse:
         payload = _parse_json_body(request)
     except ValueError as exc:
         return JsonResponse({"ok": False, "message": str(exc)}, status=400)
-    result = check_license_status(payload)
+    try:
+        result = check_license_status(payload)
+    except Exception as exc:
+        return JsonResponse({"ok": False, "status": "server_error", "message": f"Falha interna em license/status: {exc}"}, status=500)
     status_code = 200 if result.get("ok") or str(result.get("status")) in {"trial", "trial_expired", "device_limit", "invalid"} else 400
     return JsonResponse(result, status=status_code)
 
@@ -117,7 +120,10 @@ def api_public_license_checkout(request: HttpRequest) -> JsonResponse:
         payload = _parse_json_body(request)
     except ValueError as exc:
         return JsonResponse({"ok": False, "message": str(exc)}, status=400)
-    result = create_checkout_session(payload)
+    try:
+        result = create_checkout_session(payload)
+    except Exception as exc:
+        return JsonResponse({"ok": False, "status": "server_error", "message": f"Falha interna em license/checkout: {exc}"}, status=500)
     return JsonResponse(result, status=200 if result.get("ok") else 400)
 
 
@@ -128,7 +134,10 @@ def api_public_mercadopago_webhook(request: HttpRequest) -> JsonResponse:
         payload = _parse_json_body(request)
     except ValueError:
         payload = {}
-    result = process_mercado_pago_webhook(payload, request.GET.dict(), dict(request.headers))
+    try:
+        result = process_mercado_pago_webhook(payload, request.GET.dict(), dict(request.headers))
+    except Exception as exc:
+        return JsonResponse({"ok": False, "status": "server_error", "message": f"Falha interna em webhook: {exc}"}, status=500)
     status_code = 200 if result.get("ok") else 401 if str(result.get("status")) == "unauthorized" else 400
     return JsonResponse(result, status=status_code)
 
