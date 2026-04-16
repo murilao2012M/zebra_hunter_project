@@ -213,7 +213,7 @@ def _bind_device_to_license(device: LicenseDevice, license_obj: LicenseRecord, c
     device.plan = license_obj.plan
     device.customer = customer or license_obj.customer
     device.status = "active"
-    device.save(update_fields=["license", "plan", "customer", "status", "updated_at", "last_seen_at"])
+    device.save(update_fields=["license", "plan", "customer", "status", "last_seen_at"])
     license_obj.last_validated_at = timezone.now()
     if not license_obj.activated_at:
         license_obj.activated_at = timezone.now()
@@ -234,7 +234,7 @@ def check_license_status(payload: dict[str, Any]) -> dict[str, Any]:
             license_obj.status = "expired"
             license_obj.save(update_fields=["status", "updated_at"])
             device.status = "blocked"
-            device.save(update_fields=["status", "updated_at"])
+            device.save(update_fields=["status", "last_seen_at"])
         elif license_obj and license_obj.status == "active":
             _bind_device_to_license(device, license_obj, customer)
             return _license_result(license_obj, "Licenca valida para este dispositivo.")
@@ -270,15 +270,15 @@ def check_license_status(payload: dict[str, Any]) -> dict[str, Any]:
         device.trial_started_at = now
         device.trial_expires_at = now + timedelta(days=int(plan.trial_days or 30))
         device.status = "trial"
-        device.save(update_fields=["trial_started_at", "trial_expires_at", "status", "updated_at"])
+        device.save(update_fields=["trial_started_at", "trial_expires_at", "status", "last_seen_at"])
     if device.trial_expires_at and timezone.now() <= device.trial_expires_at:
         if device.status != "trial":
             device.status = "trial"
-            device.save(update_fields=["status", "updated_at"])
+            device.save(update_fields=["status", "last_seen_at"])
         return _trial_result(device)
 
     device.status = "blocked"
-    device.save(update_fields=["status", "updated_at"])
+    device.save(update_fields=["status", "last_seen_at"])
     return _base_payload(
         False,
         "trial_expired",
@@ -370,7 +370,7 @@ def _ensure_checkout_url(device: LicenseDevice, plan: LicensePlan, customer: Lic
         device.checkout_url = checkout_url
         device.checkout_preference_id = str(data.get("id") or "").strip()
         device.checkout_created_at = timezone.now()
-        device.save(update_fields=["checkout_url", "checkout_preference_id", "checkout_created_at", "updated_at"])
+        device.save(update_fields=["checkout_url", "checkout_preference_id", "checkout_created_at", "last_seen_at"])
         return checkout_url
     return fallback
 
@@ -470,7 +470,7 @@ def _activate_from_payment(payment_payload: dict[str, Any]) -> LicenseRecord | N
     device.plan = plan
     device.customer = customer or device.customer
     device.status = "active"
-    device.save(update_fields=["license", "plan", "customer", "status", "updated_at"])
+    device.save(update_fields=["license", "plan", "customer", "status", "last_seen_at"])
     return license_obj
 
 
